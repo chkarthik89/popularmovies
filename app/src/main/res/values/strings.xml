@@ -9,9 +9,5 @@
     <string name="action_settings">Settings</string>
     <string name="RELEASE">" Release date : "</string>
     <string name="RATING">"Rating : "</string>
-    <!-- Key name for storing location in SharedPreferences [CHAR LIMIT=NONE] -->
-    <string name="pref_key" translatable="false">location</string>
-
-    <!-- Default postal code for location preference [CHAR LIMIT=NONE] -->
-    <string name="pref_value_default" translatable="false">popular</string>
+    <string name="btn_favorite">Mark as Favorite</string>
 </resources>

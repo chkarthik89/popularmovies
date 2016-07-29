@@ -193,7 +193,7 @@ public class MovieFragment extends Fragment {
                 final String APPKEY_PARAM = "api_key";
 
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon().appendPath(params[0])
-                        .appendQueryParameter(APPKEY_PARAM, "Your API key here")
+                        .appendQueryParameter(APPKEY_PARAM, "b351e46a179aba9f982e673d415d3c2b")
                         .build();
 
                 URL url = new URL(builtUri.toString());
