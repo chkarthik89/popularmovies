@@ -2,11 +2,13 @@ package com.example.kchebolu.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -42,6 +44,12 @@ public class MovieFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     MovieAdapter mMovieAdapter;
+    private GridView gridView;
+    static int index;
+    SharedPreferences sharedpreferences;
+    public static final String MyPREFERENCES = "Myprefs";
+    public static final String Options = "popular";
+
     public MovieFragment() {
         // Required empty public constructor
     }
@@ -65,7 +73,13 @@ public class MovieFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sharedpreferences = getContext().getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
     }
 
 
@@ -73,7 +87,13 @@ public class MovieFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        String[] urls = {};
         View rootView = inflater.inflate(R.layout.fragment_movie, container, false);
+        if(mMovieAdapter == null) {
+            mMovieAdapter = new MovieAdapter(getActivity(), urls);
+        }
+        gridView = (GridView) rootView.findViewById(R.id.list_item_movie);
+        gridView.setAdapter(mMovieAdapter);
         return rootView;
 
     }
@@ -90,9 +110,11 @@ public class MovieFragment extends Fragment {
         switch (item.getItemId()) {
 
             case R.id.action_popular:
+                index = 0;
                 new FetchMovieTask().execute("popular");
                 return true;
             case R.id.action_toprated:
+                index = 0;
                 new FetchMovieTask().execute("top_rated");
                 return true;
             default:
@@ -101,14 +123,42 @@ public class MovieFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
     public void updateMovies() {
-
-        new FetchMovieTask().execute("popular");
+        if(sharedpreferences != null) {
+            String input = sharedpreferences.getString(MyPREFERENCES,Options);
+            if (input == "top_rated") {
+                new FetchMovieTask().execute("top_rated");
+            } else {
+                new FetchMovieTask().execute("popular");
+            }
+        }
+        else {
+            new FetchMovieTask().execute("popular");
+            }
     }
 
 
     public void onStart() {
         super.onStart();
-        updateMovies();
+        gridView.smoothScrollToPosition(index);
+        if(index == 0) {
+           updateMovies();
+        }
+    }
+
+    public void onPause() {
+        index = gridView.getFirstVisiblePosition();
+        super.onPause();
+    }
+
+    public void onResume() {
+        super.onResume();
+    }
+
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
     }
     public class FetchMovieTask extends AsyncTask<String,Void,String[]> {
 
@@ -143,11 +193,14 @@ public class MovieFragment extends Fragment {
                 final String APPKEY_PARAM = "api_key";
 
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon().appendPath(params[0])
-                        .appendQueryParameter(APPKEY_PARAM, "Give API key here")
+                        .appendQueryParameter(APPKEY_PARAM, "b351e46a179aba9f982e673d415d3c2b")
                         .build();
 
                 URL url = new URL(builtUri.toString());
 
+                SharedPreferences.Editor editor = sharedpreferences.edit();
+                editor.putString(MyPREFERENCES,params[0]);
+                editor.apply();
                 // Create the request to TheMovieDataBase, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -203,8 +256,8 @@ public class MovieFragment extends Fragment {
         @Override
         protected void onPostExecute(String[] result) {
             if (result != null) {
-                GridView gridView = (GridView) getActivity().findViewById(R.id.list_item_movie);
                 mMovieAdapter = new MovieAdapter(getActivity(),result);
+                gridView.setSelection(index);
                 gridView.setAdapter(mMovieAdapter);
                 gridView.setOnItemClickListener(new OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View v,
@@ -218,7 +271,6 @@ public class MovieFragment extends Fragment {
                             String title[] = getMovieData("title");
                             String release[] = getMovieData("release_date");
                             String vote[] = getMovieData("vote_average");
-                            Log.v("",overview[position]);
                             bundle.putString("MOVIE_IMAGE",movie);
                             bundle.putString("MOVIE_OVERVIEW",overview[position]);
                             bundle.putString("MOVIE_TITLE",title[position]);
@@ -227,10 +279,9 @@ public class MovieFragment extends Fragment {
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-                        // When clicked, open detail activity
+
                         Intent intent = new Intent(getActivity(), DetailActivity.class).putExtras(bundle);
                         startActivity(intent);
-
                     }
                 });
 
